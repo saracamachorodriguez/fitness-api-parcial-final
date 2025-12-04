@@ -1,15 +1,25 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
+from contextlib import asynccontextmanager
 import sqlite3
 import os
+
+# Lifespan context manager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_db()
+    yield
+    # Shutdown (si fuera necesario)
 
 app = FastAPI(
     title="Microservicio de Ejercicios",
     description="API REST para gestionar ejercicios y tiempos de entrenamiento",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Configuración CORS
@@ -47,8 +57,7 @@ class Ejercicio(EjercicioBase):
     id: int
     fecha_creacion: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TiempoTotal(BaseModel):
     rutina_id: int
@@ -84,11 +93,6 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-
-# Inicializar DB al arrancar
-@app.on_event("startup")
-async def startup():
-    init_db()
 
 # Funciones auxiliares
 def calcular_tiempo_total_ejercicio(ejercicio: dict) -> int:
