@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  rutinas-service:
+    build:
+      context: ./rutinas-service
+      dockerfile: Dockerfile
+    container_name: rutinas-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DB_PATH=/data/rutinas.db
+    volumes:
+      - rutinas-data:/data
+    networks:
+      - fitness-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ejercicios-service:
+    build:
+      context: ./ejercicios-service
+      dockerfile: Dockerfile
+    container_name: ejercicios-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DB_PATH=/data/ejercicios.db
+    volumes:
+      - ejercicios-data:/data
+    networks:
+      - fitness-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  rutinas-data:
+    driver: local
+  ejercicios-data:
+    driver: local
+
+networks:
+  fitness-network:
+    driver: bridge
